@@ -7,9 +7,7 @@ class Salmon(
     override fun descripcion(): String {
         return "Salmon de nombre: $nombre \n Precio por kilo: $$precioxkilo\nStock disponible: $stock kg"
     }
-    fun Escaro(): Boolean{
-        return stock > 5000
-    }
+
 
 
 }

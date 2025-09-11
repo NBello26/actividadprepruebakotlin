@@ -1,146 +1,129 @@
-sealed class Resultado
+import kotlinx.coroutines.*
 
-data class Exito(val mensaje: String): Resultado()//positivo
+// Sealed class para resultados de control de calidad
+sealed class ControlResultado
+data class Exitoso(val mensaje: String) : ControlResultado()
+data class Fallido(val mensaje: String) : ControlResultado()
 
-data class Error(val mensaje: String): Resultado()//negativo
+// ------------------------------
+// Función suspend para controlar calidad de un pescado
+// ------------------------------
+suspend fun controlarCalidad(pescado: Pescado): ControlResultado {
+    println("Iniciando control de calidad para: ${pescado.nombre}")
+    delay(2000L) // Simula un proceso lento de 2 segundos
 
-//Función que valide el resultado y muestre un mensaje de error o positivo
-fun mostrarMensaje(resultado: Resultado){
-    //utilizar when para evaluar el tipo de resultado
-    when(resultado){
-        //-> lambda = anónimas= no tienen nombre y automaticas
-        is Exito -> println("${resultado.mensaje}") //exíto
-        is Error -> println("${resultado.mensaje}") //error
+    // Condición simple de control: stock >= 10 y precio >= 1000
+    return if (pescado.stock >= 10 && pescado.precioxkilo >= 1000) {
+        Exitoso("El pescado ${pescado.nombre} pasó el control de calidad")
+    } else {
+        Fallido("El pescado ${pescado.nombre} NO pasó el control de calidad")
     }
 }
-fun main() {
-    val productos: List<PescadoBlanco>
-    val pescadoBlanco1 = PescadoBlanco("Pescadito", 6000, 100)
-    val pescadoBlanco2 = PescadoBlanco("Pescadito full", 8000, 70)
-    val pescadoBlanco3 = PescadoBlanco("Pescadito small", 4000, 25)
 
-    val salmon1 = PescadoBlanco("Salmoncito", 8000, 85)
-    val salmon2 = PescadoBlanco("Salmoncito full", 10000, 122)
-    val salmon3 = PescadoBlanco("Salmoncito small", 5800, 15)
+// Función para mostrar resultados de control de calidad
+fun mostrarResultadoControl(resultado: ControlResultado) {
+    when (resultado) {
+        is Exitoso -> println("✅ ${resultado.mensaje}")
+        is Fallido -> println("❌ ${resultado.mensaje}")
+    }
+}
 
-    productos.
-    var montovalor = 0
-    var montostock = 0
-    var flag = "true"
-    println("Ingrese un nombre para el pescado que desea ingresar:")
-    val entradanombre = readLine()
+// ------------------------------
+// Función principal
+// ------------------------------
+fun main() = runBlocking {
+    // Lista inicial de productos
+    val productos = mutableListOf<Pescado>(
+        PescadoBlanco("Pescadito", 6000, 100),
+        PescadoBlanco("Pescadito full", 8000, 70),
+        PescadoBlanco("Pescadito small", 4000, 25),
+        Salmon("Salmoncito", 8000, 85),
+        Salmon("Salmoncito full", 10000, 122),
+        Salmon("Salmoncito small", 5800, 15)
+    )
 
-    while (flag == "true") {
+    // ------------------------------
+    // Solicitar ingreso de un nuevo pescado
+    // ------------------------------
+    println("Ingrese un nombre para el pescado que desea agregar:")
+    val nombreNuevo = readLine() ?: ""
+
+    // Solicitar precio
+    var precioNuevo = 0
+    while (true) {
         try {
-            //leer info del usuario en un input
-            println("Ingrese un valor para el pescado ${entradanombre}:")
-            val entrada = readLine()
-
-            //detectar si un valor
-            //Convertir de string = int o lanzamos una excepción
-            montovalor = entrada?.toInt() ?: throw Exception("Ingresa un dato, la entrada está vacía")
-
-            // números negativos : recibe un argumento no válido
-            if (montovalor <= 0) {
-                throw IllegalArgumentException("El precio del pescado debe ser mayor a 0")
-            }
-            flag = "false"
-            println("El valor para precio ingresado cumple los estandares")
-        } catch (e: NumberFormatException) {
-            println("Ingresa un número válido")
-            //en caso de que sea negativo
-        } catch (e: IllegalArgumentException) {
-            println("Error de lógica ${e.message}")
-        }//Cubro cualquier error no anticipado
-        catch (e: Exception) {
-            println("Error inesperado: ${e.message}")
-        }//se ejecuta si o si hay o no haya un error
-        finally {
-            println("Gracias por ingresar datos al sistema")
+            println("Ingrese un valor para el pescado $nombreNuevo:")
+            val entrada = readLine() ?: throw Exception("Entrada vacía")
+            precioNuevo = entrada.toInt()
+            if (precioNuevo <= 0) throw IllegalArgumentException("El precio debe ser mayor a 0")
+            break // Salir del loop si todo está correcto
+        } catch (e: Exception) {
+            println("Error: ${e.message}, intenta nuevamente")
         }
     }
 
-    while (flag == "false") {
+    // Solicitar stock
+    var stockNuevo = 0
+    while (true) {
         try {
-            //leer info del usuario en un input
-            println("Ingrese un stock para el pescado ${entradanombre}:")
-            val entradastock = readLine()
-
-            //detectar si un valor
-            //Convertir de string = int o lanzamos una excepción
-            montostock = entradastock?.toInt() ?: throw Exception("Ingresa un dato, la entrada está vacía")
-
-            // números negativos : recibe un argumento no válido
-            if (montostock < 0) {
-                throw IllegalArgumentException("El stock del pescado debe ser mayor o igual a 0")
-            }
-            println("El valor para precio ingresado cumple los estandares")
-            flag = "true"
-        } catch (e: NumberFormatException) {
-            println("Ingresa un número válido")
-            //en caso de que sea negativo
-        } catch (e: IllegalArgumentException) {
-            println("Error de lógica ${e.message}")
-        }//Cubro cualquier error no anticipado
-        catch (e: Exception) {
-            println("Error inesperado: ${e.message}")
-        }//se ejecuta si o si hay o no haya un error
-        finally {
-            println("Gracias por ingresar datos al sistema")
+            println("Ingrese el stock para el pescado $nombreNuevo:")
+            val entrada = readLine() ?: throw Exception("Entrada vacía")
+            stockNuevo = entrada.toInt()
+            if (stockNuevo < 0) throw IllegalArgumentException("El stock debe ser mayor o igual a 0")
+            break // Salir del loop si todo está correcto
+        } catch (e: Exception) {
+            println("Error: ${e.message}, intenta nuevamente")
         }
     }
 
-    while (flag == "true") {
+    // Seleccionar tipo de pescado
+    var pescadoNuevo: Pescado
+    while (true) {
         try {
-            //leer info del usuario en un input
-            println("Su pescado a ingresar es:\n1.- Salmon\n2.-Pescado Blanco")
-            println("Ingrese el numero correspondiente a lo que desea:")
-            val entradatipo = readLine()
-
-            //detectar si un valor
-            //Convertir de string = int o lanzamos una excepción
-            val tipo = entradatipo?.toInt() ?: throw Exception("Ingresa un dato, la entrada está vacía")
-
-            // números negativos : recibe un argumento no válido
-            if (tipo < 1 || tipo > 2) {
-                throw IllegalArgumentException("La opcion ingresada debe ser un número valido correspondiente a las opciones entregadas")
+            println("Seleccione el tipo de pescado a ingresar:\n1.- Salmon\n2.- Pescado Blanco")
+            val entrada = readLine() ?: throw Exception("Entrada vacía")
+            val tipo = entrada.toInt()
+            pescadoNuevo = when (tipo) {
+                1 -> Salmon(nombreNuevo, precioNuevo, stockNuevo)
+                2 -> PescadoBlanco(nombreNuevo, precioNuevo, stockNuevo)
+                else -> throw IllegalArgumentException("Opción inválida")
             }
-            println("la opcion ingresada cumple los estandares")
-            if (tipo == 1){
-                val salmon = Salmon(entradanombre.toString(),montovalor,montostock)
-                println(salmon.descripcion())
-                println("")
-                flag = "false"
-            }
-            else if (tipo == 2){
-                val Pescado = PescadoBlanco(entradanombre.toString(),montovalor,montostock)
-                print(Pescado.descripcion())
-                println("")
-                flag = "false"
-            }
-        } catch (e: NumberFormatException) {
-            println("Ingresa un número válido")
-            //en caso de que sea negativo
-        } catch (e: IllegalArgumentException) {
-            println("Error de lógica ${e.message}")
-        }//Cubro cualquier error no anticipado
-        catch (e: Exception) {
-            println("Error inesperado: ${e.message}")
-        }//se ejecuta si o si hay o no haya un error
-        finally {
-            println("Gracias por ingresar datos al sistema")
+            break // Salir del loop si todo está correcto
+        } catch (e: Exception) {
+            println("Error: ${e.message}, intenta nuevamente")
         }
     }
 
-    //Intentar guardaro los pescados en una lista para poder usar el filter y la opcion esCaro()
-    Pescado.filterIsInstance<Salmon>().filter {it.Escaro}.forEach {
-        println("- ${it.descripcion()}")
+    // Agregar el nuevo pescado a la lista
+    productos.add(pescadoNuevo)
+    println("Pescado agregado correctamente:")
+    println(pescadoNuevo.descripcion())
+    println("")
+
+    // ------------------------------
+    // Mostrar pescados caros (precio > 5000)
+    // ------------------------------
+    println("---\nPescados con precio mayor a 5000:")
+    productos.filter { it.esCaro() }.forEach { println(it.descripcion()) }
+
+    // ------------------------------
+    // Mostrar valor total de cada pescado
+    // ------------------------------
+    println("---\nValor total de cada pescado:")
+    productos.forEach { println(it.descripcion()) }
+
+    // ------------------------------
+    // Calcular y mostrar el valor total de todos los productos
+    // ------------------------------
+    val totalValor = productos.sumOf { it.valorTotal() }
+    println("---\nValor total de todos los pescados: $totalValor")
+
+    // ------------------------------
+    // Control de calidad para cada pescado
+    // ------------------------------
+    println("---\nIniciando control de calidad de todos los pescados:")
+    productos.forEach { pescado ->
+        val resultado = controlarCalidad(pescado)
+        mostrarResultadoControl(resultado)
     }
-
-
-
-    val r1 : Resultado = Exito("Acceso correcto puedes pasar al dashboard")
-    val r2 : Resultado = Error("Acceso incorrecto, vuelve a intentarlo")
-    println(r1)
-    println(r2)
 }
